@@ -23,7 +23,17 @@ export default function StreamPrinter({
           );
         })
       )
-      .subscribe((ev: ReactNode) => println(ev));
+      .subscribe({
+        next: (ev: ReactNode) => println(ev),
+        error: (e) =>
+          println(
+            <div style={{ backgroundColor: "red" }}>
+              {e.message || e.toString()}
+            </div>
+          ),
+        complete: () =>
+          println(<div style={{ backgroundColor: "green" }}>DONE</div>)
+      });
     return () => subscription.unsubscribe();
   }, []);
 
