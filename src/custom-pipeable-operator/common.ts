@@ -115,3 +115,25 @@ export function myStartWith<T, R>(s: R) {
       });
     });
 }
+
+export function myMerge<T, R>(o$: Observable<R>) {
+  return (source$: Observable<T>) =>
+    new Observable<T | R>((observer) => {
+      const complete = ((completeThreshold) => {
+        let completeCounter = 0;
+        return () => {
+          if (++completeCounter === completeThreshold) {
+            observer.complete();
+          }
+        };
+      })(2);
+      o$.subscribe({
+        ...forwardObserver(observer),
+        complete: complete
+      });
+      source$.subscribe({
+        ...forwardObserver(observer),
+        complete: complete
+      });
+    });
+}
