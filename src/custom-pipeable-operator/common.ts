@@ -116,9 +116,10 @@ export function myStartWith<T, R>(s: R) {
     });
 }
 
-export function myMerge<T, R>(o$: Observable<R>) {
-  return (source$: Observable<T>) =>
-    new Observable<T | R>((observer) => {
+// Not working perfectly, stream order is a little messed up  🤔
+export function myMerge(...streams$: Observable<any>[]) {
+  return (source$: Observable<any>) =>
+    new Observable<any>((observer) => {
       const complete = ((completeThreshold) => {
         let completeCounter = 0;
         return () => {
@@ -126,10 +127,12 @@ export function myMerge<T, R>(o$: Observable<R>) {
             observer.complete();
           }
         };
-      })(2);
-      o$.subscribe({
-        ...forwardObserver(observer),
-        complete: complete
+      })(streams$.length + 1);
+      streams$.forEach((s$) => {
+        s$.subscribe({
+          ...forwardObserver(observer),
+          complete: complete
+        });
       });
       source$.subscribe({
         ...forwardObserver(observer),
