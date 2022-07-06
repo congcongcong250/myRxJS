@@ -94,13 +94,13 @@ export function myLast<T>() {
   return myTakeLast<T>(1);
 }
 
-export function myConcatWith<T, R>(o: Observable<R>) {
+export function myConcatWith<T, R>(o$: Observable<R>) {
   return (source$: Observable<T>) =>
     new Observable<T | R>((observer) => {
       source$.subscribe({
         ...forwardObserver(observer),
         complete: () => {
-          o.subscribe(observer);
+          o$.subscribe(observer);
         }
       });
     });
