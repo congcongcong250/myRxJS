@@ -116,8 +116,6 @@ export function myStartWith<T, R>(s: R) {
     });
 }
 
-// Not working perfectly, stream order is a little messed up  🤔
-// Same as official merge() and mergeWith()
 export function myMerge(...streams$: Observable<any>[]) {
   return (source$: Observable<any>) =>
     new Observable<any>((observer) => {
