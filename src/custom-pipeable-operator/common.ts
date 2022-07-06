@@ -1,47 +1,47 @@
-import { Observable } from "rxjs";
+import { Observable, Subscription } from "rxjs";
 import { forwardObserver } from "./utils";
 
 export function myMap<T, R>(transformer: (x: T) => R) {
   return (source$: Observable<T>) =>
-    new Observable<R>((observer) => {
+    new Observable<R>((observer) =>
       source$.subscribe({
         ...forwardObserver(observer),
         next: (v) => observer.next(transformer(v))
-      });
-    });
+      })
+    );
 }
 
 export function myMapTo<R>(x: R) {
   return (source$: Observable<any>) =>
-    new Observable<R>((observer) => {
+    new Observable<R>((observer) =>
       source$.subscribe({
         ...forwardObserver(observer),
         next: (v) => observer.next(x)
-      });
-    });
+      })
+    );
 }
 
 export function myTap<T>(process: (x: T) => void) {
   return (source$: Observable<T>) =>
-    new Observable((observer) => {
+    new Observable((observer) =>
       source$.subscribe({
         ...forwardObserver(observer),
         next: (v) => {
           process(v);
           return observer.next(v);
         }
-      });
-    });
+      })
+    );
 }
 
 export function myFilter<T>(filterFunc: (x: T) => boolean) {
   return (source$: Observable<T>) =>
-    new Observable<T>((observer) => {
+    new Observable<T>((observer) =>
       source$.subscribe({
         ...forwardObserver(observer),
         next: (v) => filterFunc(v) && observer.next(v)
-      });
-    });
+      })
+    );
 }
 
 // 🌟 Put the counter inside of the new observer's scope
@@ -50,7 +50,7 @@ export function myTake<T>(n: number) {
   return (source$: Observable<T>) =>
     new Observable<T>((observer) => {
       let counter = 0;
-      source$.subscribe({
+      return source$.subscribe({
         ...forwardObserver(observer),
         next: (v) => (counter++ === n ? observer.complete() : observer.next(v))
       });
@@ -65,7 +65,7 @@ export function mySkip<T>(n: number) {
   return (source$: Observable<T>) =>
     new Observable<T>((observer) => {
       let counter = 0;
-      source$.subscribe({
+      return source$.subscribe({
         ...forwardObserver(observer),
         next: (v) => counter++ < n || observer.next(v)
       });
@@ -76,7 +76,7 @@ export function myTakeLast<T>(n: number) {
   return (source$: Observable<T>) =>
     new Observable<T>((observer) => {
       let buffer: T[] = [];
-      source$.subscribe({
+      return source$.subscribe({
         ...forwardObserver(observer),
         next: (v) => {
           buffer.length === n && buffer.shift();
@@ -96,21 +96,21 @@ export function myLast<T>() {
 
 export function myConcatWith<T, R>(o$: Observable<R>) {
   return (source$: Observable<T>) =>
-    new Observable<T | R>((observer) => {
+    new Observable<T | R>((observer) =>
       source$.subscribe({
         ...forwardObserver(observer),
         complete: () => {
           o$.subscribe(observer);
         }
-      });
-    });
+      })
+    );
 }
 
 export function myStartWith<T, R>(s: R) {
   return (source$: Observable<T>) =>
     new Observable<T | R>((observer) => {
       observer.next(s);
-      source$.subscribe({
+      return source$.subscribe({
         ...forwardObserver(observer)
       });
     });
@@ -129,15 +129,25 @@ export function myMerge(...streams$: Observable<any>[]) {
           }
         };
       })(streams$.length + 1);
+      const groupSubscription: Subscription[] = [];
       streams$.forEach((s$) => {
-        s$.subscribe({
+        groupSubscription.push(
+          s$.subscribe({
+            ...forwardObserver(observer),
+            complete: complete
+          })
+        );
+      });
+      groupSubscription.push(
+        source$.subscribe({
           ...forwardObserver(observer),
           complete: complete
-        });
-      });
-      source$.subscribe({
-        ...forwardObserver(observer),
-        complete: complete
-      });
+        })
+      );
+      return {
+        unsubscribe: () => {
+          groupSubscription.forEach((s) => s.unsubscribe());
+        }
+      };
     });
 }
