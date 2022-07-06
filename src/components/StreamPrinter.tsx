@@ -41,7 +41,9 @@ export default function StreamPrinter({
     <div className="stream-printer">
       <h3>stream printer</h3>
       {outputList.map((line, index) => (
-        <p key={index}>{line}</p>
+        <div key={index} style={{ marginTop: "10px", marginBottom: "10px" }}>
+          {line}
+        </div>
       ))}
     </div>
   );
