@@ -1,4 +1,16 @@
-import { from, of, delay, concatMap } from "rxjs";
+import {
+  from,
+  of,
+  delay,
+  concatMap,
+  interval,
+  takeWhile,
+  map,
+  timer,
+  mergeMap,
+  zip,
+  combineLatestWith
+} from "rxjs";
 
 export enum UNIT {
   _SEC = 1000,
@@ -13,17 +25,16 @@ export function getStreams(unit: UNIT = UNIT._100MS) {
       concatMap((x) => of(x).pipe(delay(1 * unit)))
     ),
     // 2 sec interval
-    stream2$: from(["🤔", "💪🏻", "✅", "👍", "📈"]).pipe(
-      concatMap((x) => of(x).pipe(delay(2 * unit)))
+    stream2$: zip([interval(2 * unit), of("🤔", "💪🏻", "✅", "👍", "📈")]).pipe(
+      map((x) => x[1])
     ),
     // 3 sec interval
-    stream3$: from(["{||}", "<||>", "[||]", "||/"]).pipe(
-      concatMap((x) => of(x).pipe(delay(3 * unit)))
+    stream3$: interval(3 * unit).pipe(
+      map((i) => ["{||}", "<||>", "[||]", "\\||/"][i]),
+      takeWhile((v) => v !== undefined)
     ),
     // 4 sec interval
-    stream4$: from(["XX", "YY", "ZZ"]).pipe(
-      concatMap((x) => of(x).pipe(delay(4 * unit)))
-    )
+    stream4$: timer(4 * unit).pipe(mergeMap((i) => of(["XX", "YY", "ZZ"][i])))
   };
   return streams$;
 }
