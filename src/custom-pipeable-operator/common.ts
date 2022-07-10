@@ -116,7 +116,7 @@ export function myStartWith<T, R>(s: R) {
     });
 }
 
-export function myMerge(...streams$: Observable<any>[]) {
+export function myMergeWith(...streams$: Observable<any>[]) {
   return (source$: Observable<any>) =>
     new Observable<any>((observer) => {
       const complete = ((completeThreshold) => {

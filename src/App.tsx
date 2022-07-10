@@ -1,7 +1,6 @@
 import "./styles.css";
-import { from, of, delay, map, concatMap, Observable } from "rxjs";
+import { from, of, delay, map, concatMap } from "rxjs";
 import StreamPrinter from "./components/StreamPrinter";
-import { useEffect, useState } from "react";
 
 const stream$ = from([1, 2, 3]).pipe(
   map((x) => x * x),
