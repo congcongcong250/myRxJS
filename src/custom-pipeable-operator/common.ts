@@ -128,7 +128,7 @@ export function myMerge(...streams$: Observable<any>[]) {
         };
       })(streams$.length + 1);
       const groupSubscription: Subscription[] = [];
-      streams$.forEach((s$) => {
+      [source$, ...streams$].forEach((s$) => {
         groupSubscription.push(
           s$.subscribe({
             ...forwardObserver(observer),
@@ -136,12 +136,6 @@ export function myMerge(...streams$: Observable<any>[]) {
           })
         );
       });
-      groupSubscription.push(
-        source$.subscribe({
-          ...forwardObserver(observer),
-          complete: complete
-        })
-      );
       return {
         unsubscribe: () => {
           groupSubscription.forEach((s) => s.unsubscribe());
