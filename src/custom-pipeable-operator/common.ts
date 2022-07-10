@@ -119,7 +119,7 @@ export function myStartWith<T, R>(s: R) {
 export function myMergeWith(...streams$: Observable<any>[]) {
   return (source$: Observable<any>) =>
     new Observable<any>((observer) => {
-      const complete = ((completeThreshold) => {
+      const groupComplete = ((completeThreshold) => {
         let completeCounter = 0;
         return () => {
           if (++completeCounter === completeThreshold) {
@@ -132,7 +132,7 @@ export function myMergeWith(...streams$: Observable<any>[]) {
         groupSubscription.push(
           s$.subscribe({
             ...forwardObserver(observer),
-            complete: complete
+            complete: groupComplete
           })
         );
       });
