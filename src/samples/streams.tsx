@@ -1,6 +1,6 @@
 import { from, of, delay, concatMap } from "rxjs";
 
-enum UNIT {
+export enum UNIT {
   _SEC = 1000,
   _500MS = 500,
   _100MS = 100

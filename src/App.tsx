@@ -4,6 +4,7 @@ import StreamPrinter from "./components/StreamPrinter";
 import { getStreams } from "./samples/streams";
 
 const { stream1$, stream2$, stream3$, stream4$ } = getStreams();
+
 export default function App() {
   return (
     <div className="App">

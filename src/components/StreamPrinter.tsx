@@ -1,24 +1,47 @@
-import { ReactNode, useEffect, useRef, useState } from "react";
-import { map, Observable } from "rxjs";
+import "./styles.css";
+import { ReactNode, useEffect, useState } from "react";
+import { map, Observable, startWith } from "rxjs";
+import { UNIT } from "../samples/streams";
 
 export default function StreamPrinter({
-  stream$
+  stream$,
+  starter = "-- Start --",
+  verbose = false
 }: {
   stream$: Observable<ReactNode>;
+  verbose?: boolean;
+  starter?: ReactNode | null;
 }) {
   const [outputList, setOutputList] = useState<ReactNode[]>([]);
   const println = (newLine: ReactNode) => {
-    console.log(newLine);
+    verbose && console.log(newLine);
     setOutputList((prev) => [...prev, newLine]);
   };
 
   useEffect(() => {
+    let start: undefined | Date;
     const subscription = stream$
       .pipe(
-        map((line) => {
+        startWith(starter),
+        map((node) => {
+          const now = new Date();
+          start = start === undefined ? now : start;
+          const difference = String(now.valueOf() - start.valueOf()).padStart(
+            4,
+            "0"
+          );
           return (
             <>
-              {line} at ${new Date().toISOString()}
+              <span className="stream-printer-event atom-block">{node}</span> at{" "}
+              <code className="stream-printer-sec-stamp atom-block">
+                {difference.slice(0, -3)}.{difference.slice(-3)}s
+              </code>
+              {verbose && (
+                <>
+                  <p>Start: {start.toISOString()}</p>
+                  <p>Now: {now.toISOString()}</p>
+                </>
+              )}
             </>
           );
         })
@@ -27,12 +50,12 @@ export default function StreamPrinter({
         next: (ev: ReactNode) => println(ev),
         error: (e) =>
           println(
-            <div style={{ backgroundColor: "red" }}>
+            <div className="stream-printer-error">
               {e.message || e.toString()}
             </div>
           ),
         complete: () =>
-          println(<div style={{ backgroundColor: "green" }}>DONE</div>)
+          println(<div className="stream-printer-complete">DONE</div>)
       });
     return () => subscription.unsubscribe();
   }, []);
@@ -41,7 +64,7 @@ export default function StreamPrinter({
     <div className="stream-printer">
       <h3>stream printer</h3>
       {outputList.map((line, index) => (
-        <div key={index} style={{ marginTop: "10px", marginBottom: "10px" }}>
+        <div key={index} className="stream-printer-event-line">
           {line}
         </div>
       ))}
