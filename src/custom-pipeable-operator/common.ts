@@ -125,7 +125,7 @@ export function myMergeWith(...streams$: Observable<any>[]) {
         const inObserver = {
           ...forwardObserver(observer),
           complete: groupComplete(
-            streams$.length + 1,
+            allStreams$.length + 1,
             observer.complete.bind(observer)
           )
         };
@@ -138,11 +138,11 @@ export function myMergeWith(...streams$: Observable<any>[]) {
 export function myCombineLatestWith(...streams$: Observable<any>[]) {
   return (source$: Observable<any>) =>
     new Observable<any>((observer) => {
-      const allStream$ = [source$, ...streams$];
-      const values = new Array(allStream$.length).fill(undefined);
-      const gotValue = new Array(allStream$.length).fill(false);
+      const allStreams$ = [source$, ...streams$];
+      const values = new Array(allStreams$.length).fill(undefined);
+      const gotValue = new Array(allStreams$.length).fill(false);
       const groupSubscription = new GroupSubscription();
-      allStream$.forEach((s$, i) => {
+      allStreams$.forEach((s$, i) => {
         const inObserver = {
           ...forwardObserver(observer),
           next: (v: any) => {
@@ -154,7 +154,7 @@ export function myCombineLatestWith(...streams$: Observable<any>[]) {
             }
           },
           complete: groupComplete(
-            streams$.length + 1,
+            allStreams$.length + 1,
             observer.complete.bind(observer)
           )
         };
