@@ -1,26 +1,37 @@
 .stream-printer-event-line {
   margin-top: 10px;
   margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .atom-block {
+  margin: 0px 5px 0px 5px;
   background-color: lightsteelblue;
   border-radius: 5px;
 }
 
 .stream-printer-event {
   padding: 5px 10px 5px 10px;
-  line-height: 26px;
+  box-sizing: border-box;
 }
 
 .stream-printer-sec-stamp {
   padding: 5px;
-  line-height: 21px;
+  box-sizing: border-box;
+}
+
+.stream-printer-meta-line {
+  padding: 5px 0px 5px 0px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .stream-printer-complete {
   background-color: green;
-  padding: 5px 0px 5px 0px;
 }
 .stream-printer-error {
   background-color: red;
