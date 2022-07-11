@@ -1,6 +1,8 @@
 import { Observable } from "rxjs";
 import {
   createGroupComplete,
+  createValueCache,
+  findLast,
   forwardObserver,
   GroupSubscription
 } from "./utils";
@@ -144,8 +146,7 @@ export function myCombineLatestWith(...streams$: Observable<any>[]) {
   return (source$: Observable<any>) =>
     new Observable<any>((observer) => {
       const allStreams$ = [source$, ...streams$];
-      const values = new Array(allStreams$.length).fill(undefined);
-      const gotValue = new Array(allStreams$.length).fill(false);
+      const { values, gotValue } = createValueCache(allStreams$);
       const groupSubscription = new GroupSubscription();
       const groupComplete = createGroupComplete(
         allStreams$.length,
@@ -172,8 +173,7 @@ export function myCombineLatestWith(...streams$: Observable<any>[]) {
 export function myWithLatestFrom(...streams$: Observable<any>[]) {
   return (source$: Observable<any>) =>
     new Observable<any>((observer) => {
-      const values = new Array(streams$.length).fill(undefined);
-      const gotValue = new Array(streams$.length).fill(false);
+      const { values, gotValue } = createValueCache(streams$);
       const groupSubscription = new GroupSubscription();
       streams$.forEach((s$, i) => {
         const inSubscription = s$.subscribe((v) => {
@@ -191,6 +191,42 @@ export function myWithLatestFrom(...streams$: Observable<any>[]) {
         }
       });
       groupSubscription.add(sourceSubscription);
+      return groupSubscription;
+    });
+}
+
+export function myZipWith(...streams$: Observable<any>[]) {
+  return (source$: Observable<any>) =>
+    new Observable<any>((observer) => {
+      const allStreams$ = [source$, ...streams$];
+      const matrix: { values: any[]; gotValue: boolean[] }[] = [
+        createValueCache(allStreams$)
+      ];
+      const groupSubscription = new GroupSubscription();
+      allStreams$.forEach((s$, i) => {
+        const inObserver = {
+          ...forwardObserver(observer),
+          next: (v: any) => {
+            /**
+             * Not very pure, not very functional
+             * what if .find() could return a Maybe
+             * what if we could use matrix in a immutable fashion
+             * */
+            // find() === findFirst()
+            let tuple = matrix.find(({ gotValue }) => !gotValue[i]);
+            if (!tuple) {
+              tuple = createValueCache(allStreams$);
+              matrix.push(tuple);
+            }
+            tuple.values[i] = v;
+            tuple.gotValue[i] = true;
+            if (tuple.gotValue.every((bool) => bool)) {
+              observer.next(tuple.values);
+            }
+          }
+        };
+        groupSubscription.add(s$.subscribe(inObserver));
+      });
       return groupSubscription;
     });
 }

@@ -33,3 +33,9 @@ export class GroupSubscription {
     });
   };
 }
+
+export function createValueCache(streams$: Observable<any>[]) {
+  const values: any[] = new Array(streams$.length).fill(undefined);
+  const gotValue: boolean[] = new Array(streams$.length).fill(false);
+  return { values, gotValue };
+}
