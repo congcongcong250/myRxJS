@@ -180,6 +180,7 @@ export function myWithLatestFrom(...streams$: Observable<any>[]) {
           gotValue[i] = true;
         })
       );
+      // TODO unsubscribe all subscription for streams$
       return source$.subscribe({
         ...forwardObserver(observer),
         next: (x) => {
