@@ -203,9 +203,14 @@ export function myZipWith(...streams$: Observable<any>[]) {
         createValueCache(allStreams$)
       ];
       const groupSubscription = new GroupSubscription();
+      const groupComplete = createGroupComplete(
+        allStreams$.length,
+        observer.complete.bind(observer)
+      );
       allStreams$.forEach((s$, i) => {
         const inObserver = {
           ...forwardObserver(observer),
+          complete: groupComplete,
           next: (v: any) => {
             /**
              * Not very pure, not very functional
