@@ -2,7 +2,6 @@ import { Observable } from "rxjs";
 import {
   createGroupComplete,
   forwardObserver,
-  groupComplete,
   GroupSubscription
 } from "./utils";
 
@@ -159,7 +158,6 @@ export function myCombineLatestWith(...streams$: Observable<any>[]) {
             values[i] = v;
             gotValue[i] = true;
             if (gotValue.every((bool) => bool)) {
-              console.log(gotValue);
               observer.next([...values]);
             }
           },
@@ -168,5 +166,27 @@ export function myCombineLatestWith(...streams$: Observable<any>[]) {
         groupSubscription.add(s$.subscribe(inObserver));
       });
       return groupSubscription;
+    });
+}
+
+export function myWithLatestFrom(...streams$: Observable<any>[]) {
+  return (source$: Observable<any>) =>
+    new Observable<any>((observer) => {
+      const values = new Array(streams$.length).fill(undefined);
+      const gotValue = new Array(streams$.length).fill(false);
+      streams$.forEach((s$, i) =>
+        s$.subscribe((v) => {
+          values[i] = v;
+          gotValue[i] = true;
+        })
+      );
+      return source$.subscribe({
+        ...forwardObserver(observer),
+        next: (x) => {
+          if (gotValue.every((bool) => bool)) {
+            observer.next([x, ...values]);
+          }
+        }
+      });
     });
 }
