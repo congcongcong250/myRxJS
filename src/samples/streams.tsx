@@ -24,11 +24,6 @@ export function getStreams(unit: UNIT = UNIT._100MS) {
     stream1$: from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]).pipe(
       concatMap((x) => of(x).pipe(delay(1 * unit)))
     ),
-    /**
-     * `zip()`
-     * Eagerly completes
-     * as long as one of the source completes
-     * */
     // 2 sec interval
     stream2$: zip([interval(2 * unit), of("🤔", "💪🏻", "✅", "👍", "📈")]).pipe(
       map((x) => x[1])
