@@ -199,33 +199,45 @@ export function myZipWith(...streams$: Observable<any>[]) {
   return (source$: Observable<any>) =>
     new Observable<any>((observer) => {
       const allStreams$ = [source$, ...streams$];
-      const matrix: { values: any[]; gotValue: boolean[] }[] = [
-        createValueCache(allStreams$)
-      ];
+      // A collection of buffers of values from each source.
+      // Keyed by the same index with which the sources were passed in.
+      const buffers: unknown[][] = allStreams$.map(() => []);
+
+      // An array of flags of whether or not the sources have completed.
+      // This is used to check to see if we should complete the result.
+      // Keyed by the same index with which the sources were passed in.
+      const completed = allStreams$.map(() => false);
       const groupSubscription = new GroupSubscription();
       allStreams$.forEach((s$, i) => {
         const inObserver = {
           ...forwardObserver(observer),
-          complete: () => {
-            /* TODO https://github.com/ReactiveX/rxjs/blob/master/src/internal/observable/zip.ts */
-          },
           next: (v: any) => {
             /**
-             * Not very pure, not very functional
-             * what if .find() could return a Maybe
-             * what if we could use matrix in a immutable fashion
-             * */
-            // find() === findFirst()
-            let tuple = matrix.find(({ gotValue }) => !gotValue[i]);
-            if (!tuple) {
-              tuple = createValueCache(allStreams$);
-              matrix.push(tuple);
+             * Tetris approach
+             */
+            buffers[i].push(v);
+            // if every buffer has at least one value in it, then we
+            // can shift out the oldest value from each buffer and emit
+            // them as an array.
+            if (buffers.every((buffer) => buffer.length)) {
+              const result = buffers.map((buffer) => buffer.shift());
+              observer.next(result);
+              // If any one of the sources is both complete and has an empty buffer
+              // then we complete the result. This is because we cannot possibly have
+              // any more values to zip together.
+              if (buffers.some((buffer) => !buffer.length) && completed[i]) {
+                observer.complete();
+              }
             }
-            tuple.values[i] = v;
-            tuple.gotValue[i] = true;
-            if (tuple.gotValue.every((bool) => bool)) {
-              observer.next(tuple.values);
-            }
+          },
+          complete: () => {
+            // This source completed. Mark it as complete so we can check it later
+            // if we have to.
+            completed[i] = true;
+            // But, if this complete source has nothing in its buffer, then we
+            // can complete the result, because we can't possibly have any more
+            // values from this to zip together with the other values.
+            !buffers[i].length && observer.complete();
           }
         };
         groupSubscription.add(s$.subscribe(inObserver));
