@@ -174,14 +174,15 @@ export function myWithLatestFrom(...streams$: Observable<any>[]) {
     new Observable<any>((observer) => {
       const values = new Array(streams$.length).fill(undefined);
       const gotValue = new Array(streams$.length).fill(false);
-      streams$.forEach((s$, i) =>
-        s$.subscribe((v) => {
+      const groupSubscription = new GroupSubscription();
+      streams$.forEach((s$, i) => {
+        const inSubscription = s$.subscribe((v) => {
           values[i] = v;
           gotValue[i] = true;
-        })
-      );
-      // TODO unsubscribe all subscription for streams$
-      return source$.subscribe({
+        });
+        groupSubscription.add(inSubscription);
+      });
+      const sourceSubscription = source$.subscribe({
         ...forwardObserver(observer),
         next: (x) => {
           if (gotValue.every((bool) => bool)) {
@@ -189,5 +190,7 @@ export function myWithLatestFrom(...streams$: Observable<any>[]) {
           }
         }
       });
+      groupSubscription.add(sourceSubscription);
+      return groupSubscription;
     });
 }
