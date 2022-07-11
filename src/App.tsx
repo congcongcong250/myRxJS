@@ -1,10 +1,14 @@
 import "./styles.css";
-import { mergeWith } from "rxjs";
+import { combineLatestWith, mergeWith } from "rxjs";
 import StreamPrinter from "./components/StreamPrinter";
 import { getStreams } from "./samples/streams";
+import {
+  myCombineLatestWith,
+  myMergeWith
+} from "./custom-pipeable-operator/common";
 
 const { stream1$, stream2$, stream3$, stream4$ } = getStreams();
-const merged$ = stream1$.pipe(mergeWith(stream2$, stream3$, stream4$));
+const merged$ = stream1$.pipe(myMergeWith(stream2$, stream3$, stream4$));
 
 export default function App() {
   return (

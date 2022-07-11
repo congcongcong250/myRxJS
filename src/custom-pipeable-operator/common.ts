@@ -1,5 +1,10 @@
 import { Observable } from "rxjs";
-import { forwardObserver, groupComplete, GroupSubscription } from "./utils";
+import {
+  createGroupComplete,
+  forwardObserver,
+  groupComplete,
+  GroupSubscription
+} from "./utils";
 
 export function myMap<T, R>(transformer: (x: T) => R) {
   return (source$: Observable<T>) =>
@@ -121,13 +126,14 @@ export function myMergeWith(...streams$: Observable<any>[]) {
     new Observable<any>((observer) => {
       const allStreams$ = [source$, ...streams$];
       const groupSubscription = new GroupSubscription();
+      const groupComplete = createGroupComplete(
+        allStreams$.length,
+        observer.complete.bind(observer)
+      );
       allStreams$.forEach((s$, i) => {
         const inObserver = {
           ...forwardObserver(observer),
-          complete: groupComplete(
-            allStreams$.length + 1,
-            observer.complete.bind(observer)
-          )
+          complete: groupComplete
         };
         groupSubscription.add(s$.subscribe(inObserver));
       });
@@ -142,6 +148,10 @@ export function myCombineLatestWith(...streams$: Observable<any>[]) {
       const values = new Array(allStreams$.length).fill(undefined);
       const gotValue = new Array(allStreams$.length).fill(false);
       const groupSubscription = new GroupSubscription();
+      const groupComplete = createGroupComplete(
+        allStreams$.length,
+        observer.complete.bind(observer)
+      );
       allStreams$.forEach((s$, i) => {
         const inObserver = {
           ...forwardObserver(observer),
@@ -153,10 +163,7 @@ export function myCombineLatestWith(...streams$: Observable<any>[]) {
               observer.next([...values]);
             }
           },
-          complete: groupComplete(
-            allStreams$.length + 1,
-            observer.complete.bind(observer)
-          )
+          complete: groupComplete
         };
         groupSubscription.add(s$.subscribe(inObserver));
       });

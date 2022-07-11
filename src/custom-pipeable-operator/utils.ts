@@ -8,7 +8,7 @@ export function forwardObserver<T>(observer: Subscriber<T>) {
   };
 }
 
-export const groupComplete = (
+export const createGroupComplete = (
   completeThreshold: number,
   onComplete: Function
 ) => {
