@@ -1,5 +1,5 @@
-import { Observable, Subscription } from "rxjs";
-import { forwardObserver } from "./utils";
+import { Observable } from "rxjs";
+import { forwardObserver, groupComplete, GroupSubscription } from "./utils";
 
 export function myMap<T, R>(transformer: (x: T) => R) {
   return (source$: Observable<T>) =>
@@ -119,28 +119,19 @@ export function myStartWith<T, R>(s: R) {
 export function myMergeWith(...streams$: Observable<any>[]) {
   return (source$: Observable<any>) =>
     new Observable<any>((observer) => {
-      const groupComplete = ((completeThreshold) => {
-        let completeCounter = 0;
-        return () => {
-          if (++completeCounter === completeThreshold) {
-            observer.complete();
-          }
+      const allStreams$ = [source$, ...streams$];
+      const groupSubscription = new GroupSubscription();
+      allStreams$.forEach((s$, i) => {
+        const inObserver = {
+          ...forwardObserver(observer),
+          complete: groupComplete(
+            streams$.length + 1,
+            observer.complete.bind(observer)
+          )
         };
-      })(streams$.length + 1);
-      const groupSubscription: Subscription[] = [];
-      [source$, ...streams$].forEach((s$) => {
-        groupSubscription.push(
-          s$.subscribe({
-            ...forwardObserver(observer),
-            complete: groupComplete
-          })
-        );
+        groupSubscription.add(s$.subscribe(inObserver));
       });
-      return {
-        unsubscribe: () => {
-          groupSubscription.forEach((s) => s.unsubscribe());
-        }
-      };
+      return groupSubscription;
     });
 }
 
@@ -150,35 +141,25 @@ export function myCombineLatestWith(...streams$: Observable<any>[]) {
       const allStream$ = [source$, ...streams$];
       const values = new Array(allStream$.length).fill(undefined);
       const gotValue = new Array(allStream$.length).fill(false);
-      const groupComplete = ((completeThreshold, onComplete) => {
-        let completeCounter = 0;
-        return () => {
-          if (++completeCounter === completeThreshold) {
-            onComplete();
-          }
-        };
-      })(streams$.length + 1, observer.complete.bind(observer));
-      const groupSubscription: Subscription[] = [];
+      const groupSubscription = new GroupSubscription();
       allStream$.forEach((s$, i) => {
-        groupSubscription.push(
-          s$.subscribe({
-            ...forwardObserver(observer),
-            next: (v) => {
-              values[i] = v;
-              gotValue[i] = true;
-              if (gotValue.every((bool) => bool)) {
-                console.log(gotValue);
-                observer.next([...values]);
-              }
-            },
-            complete: groupComplete
-          })
-        );
+        const inObserver = {
+          ...forwardObserver(observer),
+          next: (v: any) => {
+            values[i] = v;
+            gotValue[i] = true;
+            if (gotValue.every((bool) => bool)) {
+              console.log(gotValue);
+              observer.next([...values]);
+            }
+          },
+          complete: groupComplete(
+            streams$.length + 1,
+            observer.complete.bind(observer)
+          )
+        };
+        groupSubscription.add(s$.subscribe(inObserver));
       });
-      return {
-        unsubscribe: () => {
-          groupSubscription.forEach((s) => s.unsubscribe());
-        }
-      };
+      return groupSubscription;
     });
 }
