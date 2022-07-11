@@ -1,7 +1,6 @@
 import "./styles.css";
 import { ReactNode, useEffect, useState } from "react";
 import { map, Observable, startWith } from "rxjs";
-import { UNIT } from "../samples/streams";
 
 export default function StreamPrinter({
   stream$,

@@ -143,3 +143,42 @@ export function myMergeWith(...streams$: Observable<any>[]) {
       };
     });
 }
+
+export function myCombineLatestWith(...streams$: Observable<any>[]) {
+  return (source$: Observable<any>) =>
+    new Observable<any>((observer) => {
+      const allStream$ = [source$, ...streams$];
+      const values = new Array(allStream$.length).fill(undefined);
+      const gotValue = new Array(allStream$.length).fill(false);
+      const groupComplete = ((completeThreshold, onComplete) => {
+        let completeCounter = 0;
+        return () => {
+          if (++completeCounter === completeThreshold) {
+            onComplete();
+          }
+        };
+      })(streams$.length + 1, observer.complete.bind(observer));
+      const groupSubscription: Subscription[] = [];
+      allStream$.forEach((s$, i) => {
+        groupSubscription.push(
+          s$.subscribe({
+            ...forwardObserver(observer),
+            next: (v) => {
+              values[i] = v;
+              gotValue[i] = true;
+              if (gotValue.every((bool) => bool)) {
+                console.log(gotValue);
+                observer.next([...values]);
+              }
+            },
+            complete: groupComplete
+          })
+        );
+      });
+      return {
+        unsubscribe: () => {
+          groupSubscription.forEach((s) => s.unsubscribe());
+        }
+      };
+    });
+}
