@@ -245,3 +245,21 @@ export function myZipWith(...streams$: Observable<any>[]) {
       return groupSubscription;
     });
 }
+
+export function myScan<A, V>(
+  accumulator: (acc: A, cur: V, index: number) => A,
+  init: A
+) {
+  return (source$: Observable<any>) =>
+    new Observable<A>((observer) => {
+      let acc = init;
+      let counter = 0;
+      return source$.subscribe({
+        ...forwardObserver(observer),
+        next: (x) => {
+          acc = accumulator(acc, x, counter++);
+          observer.next(acc);
+        }
+      });
+    });
+}
