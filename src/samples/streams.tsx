@@ -39,7 +39,10 @@ export function getStreams(unit: UNIT = UNIT._100MS) {
       takeWhile((v) => v !== undefined)
     ),
     // 4 sec interval
-    stream4$: timer(4 * unit).pipe(mergeMap((i) => of(["XX", "YY", "ZZ"][i])))
+    stream4$: interval(4 * unit).pipe(
+      mergeMap((i) => of(["XX", "YY", "ZZ"][i])),
+      takeWhile((v) => v !== undefined)
+    )
   };
   return streams$;
 }
