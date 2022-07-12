@@ -265,54 +265,36 @@ export function myScan<A, V>(
     });
 }
 
-export function myBuffer<T>(count: number) {
-  return (source$: Observable<T>) =>
-    new Observable<T[]>((observer) => {
-      const buffer: T[] = [];
-      return source$.subscribe({
-        ...forwardObserver(observer),
-        complete: () => {
-          buffer.length && observer.next(buffer.splice(0, buffer.length));
-          observer.complete();
-        },
-        next: (x) => {
-          buffer.push(x);
-          if (buffer.length === count) {
-            observer.next(buffer.splice(0, count));
-          }
-        }
-      });
-    });
-}
+// myDelay()
+// use setTimeout()
 
-export function myBufferTime<T>(interval: number) {
-  return (source$: Observable<T>) =>
-    new Observable<T[]>((observer) => {
-      const buffer: T[] = [];
-      const loop = setInterval(() => {
-        if (buffer.length) {
-          observer.next(buffer.splice(0, buffer.length));
-        }
-      }, interval);
-      const subscription = source$.subscribe({
-        error: (e) => {
-          clearInterval(loop);
-          observer.error(e);
-        },
-        complete: () => {
-          clearInterval(loop);
-          observer.next(buffer.splice(0, buffer.length));
-          observer.complete();
-        },
-        next: (x) => {
-          buffer.push(x);
-        }
-      });
-      return {
-        unsubscribe: () => {
-          clearInterval(loop);
-          subscription.unsubscribe();
-        }
-      };
-    });
-}
+// myDebounce()
+// use setTimeout() to set a flag `emitReady: boolean`
+// In next():
+// - emit ifs emitReady ==== true
+// - clear the previous timeout
+// - reset emitReady = false
+// - start a new timeout
+
+// myThrottle()
+// use setTimeout() to set a flag `emitReady: boolean`
+// In next():
+// - emit if emitReady ==== true
+// - if no timeout
+//   - reset emitReady = false
+//   - start a new timeout
+
+// myDistinct(comparator, flusher$)
+// use buffer: [] to buffer previous value
+// In next(x):
+// - buffer.some(b => comparator(x))
+// - if false, emit x, push x to buffer
+//
+// In flusher$ next()
+// - buffer.splice(0, buffer.length
+
+// myDistinctUntilChanged()
+// use buffer: any to buffer ONE previous value
+// In next(x):
+// - buffer === x
+// - if false, emit x, buffer = x
