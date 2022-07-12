@@ -264,3 +264,55 @@ export function myScan<A, V>(
       });
     });
 }
+
+export function myBuffer<T>(count: number) {
+  return (source$: Observable<T>) =>
+    new Observable<T[]>((observer) => {
+      const buffer: T[] = [];
+      return source$.subscribe({
+        ...forwardObserver(observer),
+        complete: () => {
+          buffer.length && observer.next(buffer.splice(0, buffer.length));
+          observer.complete();
+        },
+        next: (x) => {
+          buffer.push(x);
+          if (buffer.length === count) {
+            observer.next(buffer.splice(0, count));
+          }
+        }
+      });
+    });
+}
+
+export function myBufferTime<T>(interval: number) {
+  return (source$: Observable<T>) =>
+    new Observable<T[]>((observer) => {
+      const buffer: T[] = [];
+      const loop = setInterval(() => {
+        if (buffer.length) {
+          observer.next(buffer.splice(0, buffer.length));
+        }
+      }, interval);
+      const subscription = source$.subscribe({
+        error: (e) => {
+          clearInterval(loop);
+          observer.error(e);
+        },
+        complete: () => {
+          clearInterval(loop);
+          observer.next(buffer.splice(0, buffer.length));
+          observer.complete();
+        },
+        next: (x) => {
+          buffer.push(x);
+        }
+      });
+      return {
+        unsubscribe: () => {
+          clearInterval(loop);
+          subscription.unsubscribe();
+        }
+      };
+    });
+}
