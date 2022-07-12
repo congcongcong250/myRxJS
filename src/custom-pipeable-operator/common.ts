@@ -298,3 +298,31 @@ export function myScan<A, V>(
 // In next(x):
 // - buffer === x
 // - if false, emit x, buffer = x
+
+/**
+ * myCatch
+ *
+ * retry(2) equavalent
+ * myCatch((e, caught$) => {
+ *   if (counter++ < 2) {
+ *     return caught$;
+ *   } else {
+ *     return empty();
+ *   }
+ * })
+ *  */
+export function myCatch<A>(
+  selector: (err: any, caught: Observable<A>) => Observable<any>
+) {
+  return (source$: Observable<A>): Observable<A> =>
+    new Observable<A>((observer) => {
+      return source$.subscribe({
+        ...forwardObserver(observer),
+        // 🌟 Use recursion to pass this observable to selector again
+        error: (e) =>
+          selector(e, myCatch(selector)(source$)).subscribe({
+            ...forwardObserver(observer)
+          })
+      });
+    });
+}
