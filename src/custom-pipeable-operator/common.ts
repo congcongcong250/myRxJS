@@ -268,21 +268,18 @@ export function myScan<A, V>(
 // myDelay()
 // use setTimeout()
 
-// myDebounce()
-// use setTimeout() to set a flag `emitReady: boolean`
+// myDebounce(n)
 // In next():
-// - emit ifs emitReady ==== true
-// - clear the previous timeout
-// - reset emitReady = false
-// - start a new timeout
+// - clearTimeout(timeout)
+// - timeout = setTimeout(emit, n);
 
 // myThrottle()
-// use setTimeout() to set a flag `emitReady: boolean`
+// emitReady: boolean = true
 // In next():
-// - emit if emitReady ==== true
-// - if no timeout
-//   - reset emitReady = false
-//   - start a new timeout
+// - if emitReady === true
+//   - emit value
+//   - emitReady = false
+//   - setTimeout(() => emitReady = true, n)
 
 // myDistinct(comparator, flusher$)
 // use buffer: [] to buffer previous value
