@@ -1,4 +1,4 @@
-import { Observable } from "rxjs";
+import { Observable, Subscription } from "rxjs";
 import {
   createGroupComplete,
   createValueCache,
@@ -321,5 +321,66 @@ export function myCatch<A>(
             ...forwardObserver(observer)
           })
       });
+    });
+}
+
+export function myMergeMap<A, R>(mapper: (x: A) => Observable<R>) {
+  return (source$: Observable<A>) =>
+    new Observable<R>((observer) => {
+      let activeCounter = 1;
+      const complete = () => {
+        if (--activeCounter === 0) {
+          observer.complete();
+        }
+      };
+      const groupSubscription = new GroupSubscription();
+      groupSubscription.add(
+        source$.subscribe({
+          ...forwardObserver(observer),
+          next: (x: A) => {
+            activeCounter++;
+            groupSubscription.add(
+              mapper(x).subscribe({
+                ...forwardObserver(observer),
+                complete
+              })
+            );
+          },
+          complete
+        })
+      );
+      return groupSubscription;
+    });
+}
+
+export function mySwitchMap<A, R>(mapper: (x: A) => Observable<R>) {
+  return (source$: Observable<A>) =>
+    new Observable<R>((observer) => {
+      let inSubscription: Subscription | undefined;
+      let activeCounter = 1;
+      const complete = () => {
+        if (--activeCounter === 0) {
+          observer.complete();
+        }
+      };
+      const subscription = source$.subscribe({
+        ...forwardObserver(observer),
+        next: (x: A) => {
+          activeCounter = 2;
+          inSubscription && inSubscription.unsubscribe();
+          inSubscription = mapper(x).subscribe({
+            ...forwardObserver(observer),
+            complete
+          });
+        },
+        complete
+      });
+
+      return {
+        unsubscribe: () => {
+          subscription.unsubscribe();
+          inSubscription?.unsubscribe();
+        }
+      };
     });
 }
